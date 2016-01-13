@@ -146,8 +146,8 @@ class LinkDao: NSObject {
         /**
          初始化连接池，并监听回调
          */
-        func _initLinkDao(){
-        hubConnection = SwiftR.connect("http://123.56.130.232:8089/signalr") { [weak self] connection in
+        func _initLinkDao(URLStr urlStr:String){
+        hubConnection = SwiftR.connect(urlStr) { [weak self] connection in
         
         self?.chatHub = connection.createHubProxy("chatHub")
         
