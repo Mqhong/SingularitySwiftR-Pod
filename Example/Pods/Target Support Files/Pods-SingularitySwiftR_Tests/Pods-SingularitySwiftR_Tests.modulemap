@@ -1,0 +1,6 @@
+framework module Pods_SingularitySwiftR_Tests {
+  umbrella header "Pods-SingularitySwiftR_Tests-umbrella.h"
+
+  export *
+  module * { export * }
+}

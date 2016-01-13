@@ -1,0 +1,23 @@
+PODS:
+  - Nimble (3.0.0)
+  - Quick (0.8.0)
+  - SingularitySwiftR (1.0.0):
+    - SwiftR
+  - SwiftR (0.8.4)
+
+DEPENDENCIES:
+  - Nimble (= 3.0.0)
+  - Quick (~> 0.8.0)
+  - SingularitySwiftR (from `../`)
+
+EXTERNAL SOURCES:
+  SingularitySwiftR:
+    :path: ../
+
+SPEC CHECKSUMS:
+  Nimble: 4c353d43735b38b545cbb4cb91504588eb5de926
+  Quick: 563d0f6ec5f72e394645adb377708639b7dd38ab
+  SingularitySwiftR: 813d2fa27130d247e8b717e19144b76930032986
+  SwiftR: e9fcbb304a9e0dba06e4c774350bd49b78fccde6
+
+COCOAPODS: 0.39.0
