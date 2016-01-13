@@ -14,7 +14,7 @@
             buildForArchiving = "YES">
             <BuildableReference
                BuildableIdentifier = 'primary'
-               BlueprintIdentifier = '89B07689228BB6FB9B711193'
+               BlueprintIdentifier = 'F7FF612B52FEED2945EE3A16'
                BlueprintName = 'SingularitySwiftR'
                ReferencedContainer = 'container:Pods.xcodeproj'
                BuildableName = 'SingularitySwiftR.framework'>
