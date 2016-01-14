@@ -15,7 +15,7 @@
   "platforms": {
     "ios": "8.3"
   },
-  "source_files": "Pod/Classes/**/*.Swift",
+  "source_files": "Pod/Classes/*.Swift",
   "dependencies": {
     "SwiftR": [
 

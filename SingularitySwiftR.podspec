@@ -17,7 +17,7 @@ s.requires_arc = true
 
 s.ios.deployment_target = '8.3'
 
-s.source_files = 'Pod/Classes/**/*.Swift'
+s.source_files = 'Pod/Classes/*.Swift'
 
 s.dependency 'SwiftR'
 
