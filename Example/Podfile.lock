@@ -1,7 +1,7 @@
 PODS:
   - Nimble (3.0.0)
   - Quick (0.8.0)
-  - SingularitySwiftR (1.0.5):
+  - SingularitySwiftR (1.0.6):
     - SwiftR
   - SwiftR (0.8.4)
 
@@ -17,7 +17,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Nimble: 4c353d43735b38b545cbb4cb91504588eb5de926
   Quick: 563d0f6ec5f72e394645adb377708639b7dd38ab
-  SingularitySwiftR: 007942aa8ed9b2697ce66586cb395ab5155815e2
+  SingularitySwiftR: 4c706cc8a2c7903dbda55ee5571b819688a16d0d
   SwiftR: e9fcbb304a9e0dba06e4c774350bd49b78fccde6
 
 COCOAPODS: 0.39.0
