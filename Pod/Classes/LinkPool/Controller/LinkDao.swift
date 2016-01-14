@@ -9,14 +9,10 @@
 import Foundation
 import SwiftR
 
-public enum LinkState{
-    case Connecting
-    case Connected
-    case Disconnected
-}
+
 
 @objc protocol LinkDaoDelegate{
-    /**
+    /**!
      登录成功的回调
      
      :param: Dict 服务器返回的数据
@@ -58,6 +54,9 @@ public enum LinkState{
      chat_session_type //聊天会话类型 0:用户 1:群
      sender_id //最后发送者 id
      message_id //消息 id
+     message //消息内容
+     message_time //消息发送时间
+     message_type //消息类型
      },
      {
      ```
@@ -71,17 +70,18 @@ public enum LinkState{
      
      :param: request ddd
      [
-     {
      chat_session_id //聊天会话 id
      history_messages:
+     {
      chat_session_id //聊天会话 id
      chat_session_type //聊天会话类型 0:用户 1:群
      sender_id //发送者 id
      message_id //消息id
      message //消息内容
-     },
      message_time //消息发送时间
      message_type //消息类型
+     },
+
      unread_messages:{
      ...... //同上
      } ]
@@ -116,6 +116,7 @@ public enum LinkState{
      message_id //消息 id
      message //消息内容
      message_time //消息发送时间
+     message_type //消息类型
      }
      */
     optional func LinkDao_ReceiveMessage(request:AnyObject?)
@@ -133,10 +134,25 @@ public enum LinkState{
      */
     optional func LinkDao_ChatUserStatusChanged(request:AnyObject?)
     
+    
+    /**
+     用户断开连接或重链接
+     
+     :param: request
+     返回的改变后的状态
+     
+     */
+    optional func BreakOrConnectTheConnection(request:AnyObject?)
+    
+    
 }
 
 
-
+public enum LinkState{
+    case Connecting
+    case Connected
+    case Disconnected
+}
 class LinkDao: NSObject {
         var LinkDaostate:LinkState!
         weak var delegate : LinkDaoDelegate?
@@ -146,85 +162,181 @@ class LinkDao: NSObject {
         /**
          初始化连接池，并监听回调
          */
-        func _initLinkDao(URLStr urlStr:String){
+    func _initLinkDao(urlStr urlStr:String){
+        
         hubConnection = SwiftR.connect(urlStr) { [weak self] connection in
         
         self?.chatHub = connection.createHubProxy("chatHub")
         
-        //监听loginCallback方法
+        //MARK:监听loginCallback方法
         self?.chatHub.on("loginCallback", callback: { (args) -> () in
             print("接收到loginCallback回调方法")
-        self?.delegate?.LinkDao_LoginCallBack!(args)
+
+            var user:UserModel = UserModel()
+            
+            let dict:Dictionary<String,AnyObject>! = args?["0"] as? Dictionary
+            
+            user = user.UserModelMethod(Dict: dict)
+            
+        self?.delegate?.LinkDao_LoginCallBack!(user)
         
         })
         
-        //监听获取目标信息
+        //MARK:监听获取目标信息
         self?.chatHub.on("receiveTargetInfo", callback: { (args) -> () in
             print("接收到获取目标信息")
-            self?.delegate?.LinkDao_ReceiveTargetInfo!(args)
+            
+            var mmtargetmodel:TargetUserModel = TargetUserModel()
+            
+            let dict:Dictionary<String,AnyObject>! = args?["0"] as? Dictionary
+            
+            mmtargetmodel =  mmtargetmodel.TargetUserModelMethod(Dict: dict)
+                
+            self?.delegate?.LinkDao_ReceiveTargetInfo!(mmtargetmodel)
             })
         
-        //监听获取用户会话列表
+        //MARK:监听获取用户会话列表
         self?.chatHub.on("receiveChatSessionList", callback: { (args) -> () in
             print("接收到用户会话列表")
-            self?.delegate?.LinkDao_ReceiveChatSessionList!(args)
+            
+            let Arrdict:Array<AnyObject>! = args?["0"] as? Array
+                
+            let sessionlistmodel = SessionListModel()
+                
+            let sessionmodel = SessionModel()
+                
+            sessionlistmodel.SessionList = sessionmodel.SessionListModelMethod(ArrDict: Arrdict)
+                
+            self?.delegate?.LinkDao_ReceiveChatSessionList!(sessionlistmodel)
+            
             })
         
         
-        //监听获取用户未读消息
-        self?.chatHub.on("receiveUnreadMessages", callback: { (args) -> () in
-            print("接收到用户未读消息")
-            self?.delegate?.LinkDao_ReceiveUnreadMessages!(args)
-            })
+        //MARK:监听获取用户未读消息
+            self?.chatHub.on("receiveUnreadMessages", callback: { (args) -> () in
+                print("接收到用户未读消息")
+                
+                let ArrDict:Array<AnyObject>! = args?["0"] as? Array
+                
+                let message = MessageModel()
+                
+                let arr:Array<MessageModel> = message.MessageModelMethodWithArrDict(ArrDict: ArrDict)
+                
+                let unreadMessages:UnreadMessagesModel = UnreadMessagesModel()
+                
+                unreadMessages.unread_messages = arr;
+                
+                print("arr:\(unreadMessages)")
+
+                self?.delegate?.LinkDao_ReceiveUnreadMessages!(unreadMessages)
+                })
         
-        //监听获取用户历史消息
+        //MARK:监听获取用户历史消息
         self?.chatHub.on("receiveHistoryMessages", callback: { (args) -> () in
             print("接收到历史消息")
-            self?.delegate?.LinkDao_ReceiveUnreadMessages!(args)
+            
+                    let TotelDict:Dictionary<String,AnyObject>! = args?["0"] as? Dictionary
+
+                    
+                    let unread_messages:Array<AnyObject> = (TotelDict["unread_messages"] as? Array<AnyObject>)!
+                    
+                    let history_messages:Array<AnyObject> = (TotelDict["history_messages"] as? Array<AnyObject>)!
+                    
+                    let historyMessageses:HistoryMessageModel = HistoryMessageModel()
+                    
+                    let messmodel = MessageModel()
+                    
+                    historyMessageses.chat_session_id = TotelDict["chat_session_id"] as? String
+                    
+                    historyMessageses.unread_messages = messmodel.MessageModelMethodWithArrDict(ArrDict: unread_messages)
+                    
+                    historyMessageses.history_messages = messmodel.MessageModelMethodWithArrDict(ArrDict: history_messages)
+                    
+                    print(historyMessageses)
+            
+            self?.delegate?.LinkDao_ReceiveUnreadMessages!(historyMessageses)
             })
         
-        //监听发送消息的回调
+        //MARK:监听发送消息的回调
         self?.chatHub.on("messageCallback", callback: { (args) -> () in
+            
             print("接收到发送消息的回调")
-            self?.delegate?.LinkDao_MessageCallback!(args)
+            
+            
+            let Dict:Dictionary<String,AnyObject>! = args?["0"] as? Dictionary
+            
+            var messagemodel = MessageModel()
+            
+            messagemodel = messagemodel.MessageModelMethodWithDict(Dict: Dict)
+                        
+            self?.delegate?.LinkDao_MessageCallback!(messagemodel)
+            
             })
         
-        //监听接收消息
+        //MARK:监听接收消息
         self?.chatHub.on("receiveMessage", callback: { (args) -> () in
+            
             print("接收到消息")
-            self?.delegate?.LinkDao_ReceiveMessage!(args)
+            
+            let Dict:Dictionary<String,AnyObject>! = args?["0"] as? Dictionary
+            
+            var messagemodel = MessageModel()
+            
+            messagemodel = messagemodel.MessageModelMethodWithDict(Dict: Dict)
+            
+            self?.delegate?.LinkDao_ReceiveMessage!(messagemodel)
+            
             })
         
-        //监听聊天用户(对方)在线状态
+        //MARK:监听聊天用户(对方)在线状态
         self?.chatHub.on("chatUserStatusChanged", callback: { (args) -> () in
+            
             print("接收到对方在线状态")
-            self?.delegate?.LinkDao_ChatUserStatusChanged!(args)
+            
+            var userstatemodel = UserStateModel()
+            
+            let Dict:Dictionary<String,AnyObject>! = args?["0"] as? Dictionary
+            
+            userstatemodel = userstatemodel.UserStateModelMethodWithDict(Dict: Dict)
+            
+            
+            self?.delegate?.LinkDao_ChatUserStatusChanged!(userstatemodel)
+            
             })
         
         
         connection.starting = { [weak self] in
                 print("Starting...")
                 self!.LinkDaostate = LinkState.Connecting
+            print("LinkDaostate:\(self!.LinkDaostate)")
+            self!.delegate?.BreakOrConnectTheConnection!(String(self!.hubConnection.state))
         }
         
         connection.reconnecting = { [weak self] in
                 print("Reconnecting...")
                 self!.LinkDaostate = LinkState.Connecting
+            print("LinkDaostate:\(self!.LinkDaostate)")
+            self!.delegate?.BreakOrConnectTheConnection!(String(self!.hubConnection.state))
         }
         
         connection.connected = { [weak self] in
             print("Connected. Connection ID: \(connection.connectionID!)")
             self!.LinkDaostate = LinkState.Connected
+            print("LinkDaostate:\(self!.LinkDaostate)")
+            self!.delegate?.BreakOrConnectTheConnection!(String(self!.hubConnection.state))
         }
         
         connection.reconnected = { [weak self] in
             print("Reconnected. Connection ID: \(connection.connectionID!)")
             self!.LinkDaostate = LinkState.Connected
+            print("LinkDaostate:\(self!.LinkDaostate)")
+            self!.delegate?.BreakOrConnectTheConnection!(String(self!.hubConnection.state))
         }
         
         connection.disconnected = { [weak self] in
             print("Disconnected.")
             self!.LinkDaostate = LinkState.Disconnected
+            self!.delegate?.BreakOrConnectTheConnection!(String(self!.hubConnection.state))
         }
         
         connection.connectionSlow = { print("Connection slow...") }
@@ -241,7 +353,47 @@ class LinkDao: NSObject {
         }
         
         }
+    
+    
+    
+    //MARK:断开或者重新连接
+    /**
+     断开或者重新连接
+     */
+    func BreakOrConnectTheConnection(){
         
+        let state:String = String(LinkDaostate)
+        
+        print("当前状态:\(state)")
+        
+        switch state {
+            
+        case "Connecting" :
+            
+            print("正在连接")
+
+            
+        case "Connected" :
+            
+//            SwiftR.stopAll()
+            hubConnection.stop()
+            print("已经断开连接")
+
+            
+        case "Disconnected" :
+            
+//            SwiftR.startAll()
+            hubConnection.start()
+            print("已经重新连接")
+
+            
+        default:
+            print("没有连接")
+        }
+        
+    
+    }
+    
         
         //MARK:- 心跳
         /**

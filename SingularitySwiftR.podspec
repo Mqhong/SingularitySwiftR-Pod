@@ -1,7 +1,7 @@
 Pod::Spec.new do |s|
 s.name = 'SingularitySwiftR'
 
-s.version = '1.0.2'
+s.version = '1.0.3'
 
 s.license = 'MIT'
 
@@ -17,7 +17,7 @@ s.requires_arc = true
 
 s.ios.deployment_target = '8.3'
 
-s.source_files = 'Pod/Classes/*'
+s.source_files = 'Pod/Classes/**/*'
 
 s.dependency 'SwiftR'
 
